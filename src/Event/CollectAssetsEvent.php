@@ -11,7 +11,10 @@
 
 namespace ThemePlusImporter\Event;
 
-class CollectAssetsEvent
+use Symfony\Component\EventDispatcher\Event;
+
+
+class CollectAssetsEvent extends Event
 {
 	const NAME = 'theme-plus-importer.collect-assets';
 
