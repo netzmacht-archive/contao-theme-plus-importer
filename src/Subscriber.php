@@ -14,7 +14,7 @@ namespace ThemePlusImporter;
 
 use ThemePlusImporter\Event\CollectAssetsEvent;
 
-class Hooks
+class Subscriber
 {
 	/**
 	 * @param $name
