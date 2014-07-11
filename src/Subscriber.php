@@ -21,7 +21,7 @@ class Subscriber
 	 */
 	public function onLoadDataContainer($name)
 	{
-		if(!in_array($name, 'tl_theme_plus_stylesheet', 'tl_theme_plus_javascript') || \Input::get('act')) {
+		if(!in_array($name, array('tl_theme_plus_stylesheet', 'tl_theme_plus_javascript')) || \Input::get('act')) {
 			return;
 		}
 
