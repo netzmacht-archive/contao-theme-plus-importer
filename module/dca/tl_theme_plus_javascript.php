@@ -1,7 +1,7 @@
 <?php
 
 $GLOBALS['TL_DCA']['tl_theme_plus_javascript']['config']['onload_callback'][] = array(
-	'Netzmacht\ThemePluseImporter\Dca\ThemePlus',
+	'Netzmacht\ThemePlusImporter\DataContainer\ThemePlus',
 	'onLoadCallback'
 );
 

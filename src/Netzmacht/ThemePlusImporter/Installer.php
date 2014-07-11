@@ -203,6 +203,9 @@ class Installer
 			$source = 'system/modules';
 		}
 
+		var_dump(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//');
+		die();
+
 		/** @var \Model $model */
 		$model                = new $modelClass();
 		$model->tstamp        = time();
