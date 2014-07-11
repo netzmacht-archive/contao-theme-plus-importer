@@ -179,8 +179,8 @@ class Installer
 	 * @param array $layouts
 	 * @param $conditional
 	 * @param $asseticFilter
-	 *
 	 * @param $field
+	 * @throws \RuntimeException
 	 * @return \Model
 	 */
 	private function installAsset($modelClass, $file, $layouts=array(), $conditional, $asseticFilter, $field)
@@ -190,21 +190,6 @@ class Installer
 		$model   = null;
 		$type    = 'file';
 		$source  = '';
-
-		if(substr($file, 0, 6) == 'assets') {
-			$source = 'assets';
-		} elseif(substr($file, 0, 5) == 'files') {
-			$source = 'files';
-		}
-		elseif(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//') {
-			$type = 'url';
-		}
-		else {
-			$source = 'system/modules';
-		}
-
-		var_dump(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//');
-		die();
 
 		/** @var \Model $model */
 		$model                = new $modelClass();
@@ -217,6 +202,31 @@ class Installer
 		$model->asseticFilter = (string)$asseticFilter;
 		$model->sorting       = ++$sorting;
 		$model->layouts		  = $layouts;
+
+		if(substr($file, 0, 6) == 'assets') {
+			$model->filesource = 'assets';
+			$model->file       = $file;
+		}
+		elseif(substr($file, 0, 5) == 'files') {
+			$fileModel = \FilesModel::findBy('path', $file);
+
+			if(!$fileModel) {
+				throw new \RuntimeException(sprintf('File "%s" does not exists', $file));
+			}
+
+			$model->filesource = 'files';
+			$model->file       = $fileModel->uuid;
+		}
+		elseif(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//') {
+			$type = 'url';
+			$model->url = $file;
+		}
+		else {
+			$model->source = 'system/modules';
+			$model->file   = $file;
+		}
+
+		$model->type = $type;
 		$model->save();
 
 		if($layouts) {

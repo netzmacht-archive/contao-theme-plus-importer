@@ -9,7 +9,8 @@
  *
  */
 
-namespace Netzmacht\ThemePlusImporter;
+namespace Netzmacht\ThemePlusImporter\DataContainer;
+use Netzmacht\ThemePlusImporter\Installer;
 
 /**
  * Class ThemePlus
