@@ -41,12 +41,12 @@ class Installer
 	/**
 	 * @var array
 	 */
-	private $installedStylesheets;
+	private $installedStylesheets = array();
 
 	/**
 	 * @var array
 	 */
-	private $installedJavascripts;
+	private $installedJavascripts = array();
 
 
 	/**
@@ -111,8 +111,8 @@ class Installer
 	{
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_stylesheet'];
 
-		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter);
-		$this->installedStylesheets = $file;
+		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter, 'theme_plus_stylesheets');
+		$this->installedStylesheets[] = $file;
 
 		return $this;
 	}
@@ -129,8 +129,8 @@ class Installer
 	{
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_javascript'];
 
-		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter);
-		$this->installedStylesheets = $file;
+		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter, 'theme_plus_javascripts');
+		$this->installedStylesheets[] = $file;
 
 		return $this;
 	}
@@ -183,9 +183,10 @@ class Installer
 	 * @param $conditional
 	 * @param $asseticFilter
 	 *
+	 * @param $field
 	 * @return \Model
 	 */
-	private function installAsset($modelClass, $file, $layouts=array(), $conditional, $asseticFilter)
+	private function installAsset($modelClass, $file, $layouts=array(), $conditional, $asseticFilter, $field)
 	{
 		$result  = $modelClass::findAll(array('limit' => '1', 'order' => 'sorting DESC'));
 		$sorting = $result === null ? 0 : $result->sorting;
@@ -212,7 +213,49 @@ class Installer
 		$model->layouts		  = $layouts;
 		$model->save();
 
+		if($layouts) {
+			$layouts = \LayoutModel::findMultipleByIds($layouts);
+
+			if($layouts) {
+				while($layouts->next()) {
+					$value   = deserialize($layouts->$field);
+					$value[] = $model->id;
+
+					$layouts->$field = $value;
+					$layouts->save();
+				}
+			}
+		}
+
 		return $model;
 	}
 
+	/**
+	 * @return bool
+	 */
+	public function hastUninstalledStylesheets()
+	{
+		foreach($this->getUninstalledStylesheets() as $files) {
+			if(!empty($files)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * @return bool
+	 */
+	public function hasUninstalledJavascripts()
+	{
+		foreach($this->getUninstalledJavascripts() as $files) {
+			if(!empty($files)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 } 

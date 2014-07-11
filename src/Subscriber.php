@@ -25,18 +25,23 @@ class Subscriber
 			return;
 		}
 
-		$dispatcher = $GLOBALS['container']['event-dispatcher'];
-		$installer  = new Installer(\Input::get('id'), $dispatcher);
+		try {
+			$dispatcher = $GLOBALS['container']['event-dispatcher'];
+			$installer  = new Installer(\Input::get('id'), $dispatcher);
 
-		if($name == 'tl_theme_plus_stylesheet') {
-			$addIcon = (bool) count($installer->getUninstalledStylesheets());
-		}
-		else {
-			$addIcon = (bool) count($installer->getUninstalledJavascripts());
-		}
+			if($name == 'tl_theme_plus_stylesheet') {
+				$addIcon = $installer->hastUninstalledStylesheets();
+			}
+			else {
+				$addIcon = $installer->hasUninstalledJavascripts();
+			}
 
-		if(!$addIcon) {
-			unset($GLOBALS['TL_DCA'][$name]['list']['global_operations']['import']);
+			if(!$addIcon) {
+				unset($GLOBALS['TL_DCA'][$name]['list']['global_operations']['import']);
+			}
+		}
+		catch(\Exception $e) {
+
 		}
 	}
 
