@@ -9,11 +9,11 @@
  *
  */
 
-namespace ThemePlusImporter;
+namespace Netzmacht\ThemePlusImporter;
 
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use ThemePlusImporter\Event\CollectAssetsEvent;
+use Netzmacht\ThemePlusImporter\Event\CollectAssetsEvent;
 
 class Installer
 {
@@ -57,6 +57,9 @@ class Installer
 	{
 		$this->themeId         = $themeId;
 		$this->eventDispatcher = $eventDispatcher;
+
+		$this->loadAvailableAssets();
+		$this->loadInstalledAssets();
 	}
 
 
@@ -65,9 +68,6 @@ class Installer
 	 */
 	public function getUninstalledStylesheets()
 	{
-		$this->loadAvailableAssets();
-		$this->loadInstalledAssets();
-
 		$uninstalled = array();
 
 		foreach($this->stylesheets as $package => $files) {
@@ -85,9 +85,6 @@ class Installer
 	 */
 	public function getUninstalledJavascripts()
 	{
-		$this->loadAvailableAssets();
-		$this->loadInstalledAssets();
-
 		$uninstalled = array();
 
 		foreach($this->javascripts as $package => $files) {
@@ -160,7 +157,7 @@ class Installer
 	{
 		/** @var \Model  $modelClass */
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_stylesheet'];
-		$collection = $modelClass::findBy('type="file" AND pid', $this->themeId);
+		$collection = $modelClass::findBy('pid', $this->themeId);
 
 		if($collection !== null) {
 			$this->installedStylesheets = $collection->fetchEach('file');
@@ -168,7 +165,7 @@ class Installer
 
 		/** @var \Model  $modelClass */
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_javascript'];
-		$collection = $modelClass::findBy('type="file" AND pid', $this->themeId);
+		$collection = $modelClass::findBy('pid', $this->themeId);
 
 		if($collection !== null) {
 			$this->installedJavascripts = $collection->fetchEach('file');
@@ -191,12 +188,18 @@ class Installer
 		$result  = $modelClass::findAll(array('limit' => '1', 'order' => 'sorting DESC'));
 		$sorting = $result === null ? 0 : $result->sorting;
 		$model   = null;
+		$type    = 'file';
+		$source  = '';
 
 		if(substr($file, 0, 6) == 'assets') {
 			$source = 'assets';
 		} elseif(substr($file, 0, 5) == 'files') {
 			$source = 'files';
-		} else {
+		}
+		elseif(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//') {
+			$type = 'url';
+		}
+		else {
 			$source = 'system/modules';
 		}
 
@@ -204,7 +207,7 @@ class Installer
 		$model                = new $modelClass();
 		$model->tstamp        = time();
 		$model->pid           = $this->themeId;
-		$model->type          = 'file';
+		$model->type          = $type;
 		$model->file          = $file;
 		$model->filesource    = $source;
 		$model->cc            = (string)$conditional;

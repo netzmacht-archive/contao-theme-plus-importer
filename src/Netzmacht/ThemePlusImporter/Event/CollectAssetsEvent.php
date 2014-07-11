@@ -9,7 +9,7 @@
  *
  */
 
-namespace ThemePlusImporter\Event;
+namespace Netzmacht\ThemePlusImporter\Event;
 
 use Symfony\Component\EventDispatcher\Event;
 
@@ -30,19 +30,19 @@ class CollectAssetsEvent extends Event
 
 
 	/**
-	 * @param $source
+	 * @param $package
 	 * @param $path
 	 * @param null $name
 	 *
 	 * @return $this
 	 */
-	public function addJavaScript($source, $path, $name=null)
+	public function addJavaScript($package, $path, $name=null)
 	{
 		if($name) {
-			$this->javascripts[$source][$name] = $path;
+			$this->javascripts[$package][$name] = $path;
 		}
 		else {
-			$this->javascripts[$source][] = $path;
+			$this->javascripts[$package][] = $path;
 		}
 
 		return $this;
@@ -50,19 +50,19 @@ class CollectAssetsEvent extends Event
 
 
 	/**
-	 * @param $source
+	 * @param $package
 	 * @param $path
 	 * @param null $name
 	 *
 	 * @return $this
 	 */
-	public function addStylesheet($source, $path, $name=null)
+	public function addStylesheet($package, $path, $name=null)
 	{
 		if($name) {
-			$this->stylesheets[$source][$name] = $path;
+			$this->stylesheets[$package][$name] = $path;
 		}
 		else {
-			$this->stylesheets[$source][] = $path;
+			$this->stylesheets[$package][] = $path;
 		}
 
 		return $this;

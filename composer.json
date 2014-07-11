@@ -10,7 +10,7 @@
         "bit3/contao-theme-plus": ">=4.2,<=5.0.x-dev"
     },
     "autoload": {
-        "psr-4": { "ThemePlusImporter\\": "src/" }
+        "psr-0": { "Netzmacht\\ThemePlusImporter\\": "src/" }
     },
     "license": "LGPL",
     "authors": [

@@ -9,7 +9,7 @@
  *
  */
 
-namespace ThemePlusImporter;
+namespace Netzmacht\ThemePlusImporter;
 
 
 class Module extends \BackendModule
