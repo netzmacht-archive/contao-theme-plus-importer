@@ -1,5 +1,6 @@
 {
     "name": "netzmacht/theme-plus-importer",
+    "type": "contao-module",
     "description": "Assets importer for Theme+",
     "require": {
         "php":">=5.3.2",
