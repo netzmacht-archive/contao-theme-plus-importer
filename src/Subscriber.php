@@ -44,7 +44,7 @@ class Subscriber
 	/**
 	 * @param CollectAssetsEvent $event
 	 */
-	public function handleCollectAssetsEvent(CollectAssetsEvent $event)
+	public static function handleCollectAssetsEvent(CollectAssetsEvent $event)
 	{
 		if(isset($GLOBALS['THEME_PLUS_IMPORT_STYLESHEETS'])) {
 			foreach((array) $GLOBALS['THEME_PLUS_IMPORT_STYLESHEETS'] as $package => $files) {
