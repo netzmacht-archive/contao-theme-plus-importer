@@ -5,10 +5,13 @@ Theme Plus Importer
 This extension provides an import feature for the great Theme+ extension for Contao. 3rd party extension can use
 **Theme Plus Importer** to easily integrate their assets into Theme+.
 
+The extension integrates an import dialog in the Theme+ stylesheets and javascripts page:
+
 Install
 --------
 
-Theme Plus importer can be installed using the composer repository: `netzmacht/contao-theme-plus-importer`
+Theme Plus importer can be installed using the composer repository:
+`netzmacht/contao-theme-plus-importer`
 
 
 Import types
