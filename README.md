@@ -7,8 +7,8 @@ This extension provides an import feature for the great Theme+ extension for Con
 
 The extension integrates an import dialog in the Theme+ stylesheets and javascripts page:
 
-[Importer integration](docs/importer-button.jpg?raw=true "Importer button")
-[Import dialog](docs/importer-dialog.jpg?raw=true "Importer dialog")
+* [Importer integration](docs/import-button.jpg "Importer button")
+* [Import dialog](docs/import-dialog.jpg "Importer dialog")
 
 
 Install
