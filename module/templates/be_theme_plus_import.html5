@@ -8,19 +8,13 @@
 	<?php echo $this->messages; ?>
 	<form action="<?php echo $this->action; ?>" class="tl_form" method="post">
 		<div class="tl_formbody_edit">
-			<input type="hidden" name="FORM_SUBMIT" value="theme_plus_import">
+			<input type="hidden" name="FORM_SUBMIT" value="<?php echo $this->form->getName(); ?>">
 			<input type="hidden" name="REQUEST_TOKEN" value="<?php echo REQUEST_TOKEN; ?>">
-			<div class="tl_tbox">
-				<div class="clr long">
-					<h3><?php echo $this->filesLabel; ?></h3>
-					<?php echo $this->files; ?>
-					<p class="tl_help tl_tip" title=""><?php echo $this->filesHelp; ?></p>
-				</div>
-				<div class="clr long">
-					<?php echo $this->layouts; ?>
-					<p class="tl_help tl_tip" title=""><?php echo $this->layoutsHelp; ?></p>
-				</div>
+
+			<div class="tl_box">
+			<?php echo $this->form->generate(); ?>
 			</div>
+
 		</div>
 		<div class="tl_submit_container">
 			<input type="submit" name="import" class="tl_submit" value="<?php echo $this->saveButton; ?>">

@@ -20,9 +20,14 @@ class Module extends \BackendModule
 	protected $strTemplate = 'be_theme_plus_import';
 
 	/**
-	 * @var Installer
+	 * @var Importer
 	 */
-	private $installer;
+	private $importer;
+
+	/**
+	 * @var Form
+	 */
+	private $form;
 
 
 	/**
@@ -33,10 +38,15 @@ class Module extends \BackendModule
 		parent::__construct();
 
 		$dispatcher = $GLOBALS['container']['event-dispatcher'];
-		$installer  = new Installer(\Input::get('id'), $dispatcher);
+		$installer  = new Importer(\Input::get('id'), $dispatcher);
 
-		$this->installer = $installer;
-		$this->loadLanguageFile('tl_layout');
+		$this->importer = $installer;
+		$this->form     = new Form('theme_plus_import');
+
+		$this->form
+			->setOptions('files', $this->getFilesOption())
+			->setOptions('filters', $this->getAsseticFilters())
+			->initialize();
 	}
 
 
@@ -45,7 +55,7 @@ class Module extends \BackendModule
 	 */
 	public function generate()
 	{
-		if(\Input::post('FORM_SUBMIT') == 'theme_plus_import') {
+		if($this->form->validate()) {
 			$this->importAssets();
 
 			if(\Input::post('saveNback')) {
@@ -66,14 +76,7 @@ class Module extends \BackendModule
 	{
 		$table = \Input::get('table');
 
-		$this->Template->files        = $this->generateFilesWidget();
-		$this->Template->filesLabel   = $GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_files'][0];
-		$this->Template->filesHelp    = $GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_files'][1];
-
-		$this->Template->layouts      = $this->generateLayoutsWidget();
-		$this->Template->layoutsLabel = $GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_layouts'][0];
-		$this->Template->layoutsHelp  = $GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_layouts'][1];
-
+		$this->Template->form         = $this->form;
 		$this->Template->messages     = \Message::generate();
 		$this->Template->href         = $this->getReferer(true);
 		$this->Template->title        = specialchars($GLOBALS['TL_LANG']['MSC']['backBTTitle']);
@@ -91,16 +94,18 @@ class Module extends \BackendModule
 	 */
 	private function importAssets()
 	{
-		$files   = \Input::post('files');
-		$layouts = \Input::post('layouts');
+		$files         = (array)\Input::post('files');
+		$layouts       = (array)\Input::post('layouts');
+		$conditional   = \Input::post('conditional');
+		$asseticFilter = \Input::post('asseticFilter');
 
 		switch(\Input::get('table')) {
 			case 'tl_theme_plus_stylesheet':
-				$method = 'installStylesheet';
+				$method = 'importStylesheets';
 				break;
 
 			case 'tl_theme_plus_javascript':
-				$method = 'installJavascript';
+				$method = 'importJavascripts';
 				break;
 
 			default:
@@ -108,76 +113,11 @@ class Module extends \BackendModule
 				break;
 		}
 
+		$this->importer->$method($files, $layouts, $conditional, $asseticFilter);
+
 		foreach($files as $file) {
-			if(!$file['file']) {
-				continue;
-			}
-
-			$this->installer->$method($file['file'], $layouts, $file['conditional'], $file['asseticFilter']);
-			\Message::addInfo(sprintf($GLOBALS['TL_LANG']['MSC']['theme_plus_file_imported'], $file['file']));
+			\Message::addInfo(sprintf($GLOBALS['TL_LANG']['MSC']['theme_plus_file_imported'], $file));
 		}
-	}
-
-
-	/**
-	 * @return string
-	 */
-	private function generateFilesWidget()
-	{
-		$files   = $this->installer->getUninstalledStylesheets();
-		ksort($files);
-
-		$filters = $this->getAsseticFilters();
-
-		$attributes = array(
-			'name'         => 'files',
-			'label'        => 'Foo',
-			'id'		   => 'files',
-			'description'  => 'bar',
-			'type'         => 'multiColumnWizard',
-			'columnFields' => array(
-				'file' => array(
-					'label'     => &$GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_file'],
-					'inputType' => 'select',
-					'options'   => $files,
-					'eval'                    => array('style' => 'width: 300px'),
-				),
-				'conditional' => array
-				(
-					'label'                   => &$GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_conditional'],
-					'exclude'                 => true,
-					'inputType'               => 'text',
-					'eval'                    => array('style' => 'width: 140px'),
-				),
-
-				'asseticFilter' => array
-				(
-					'label'                   => &$GLOBALS['TL_LANG']['tl_layout']['theme_plus_import_filter'],
-					'exclude'                 => true,
-					'inputType'               => 'select',
-					'reference'               => &$GLOBALS['TL_LANG']['assetic'],
-					'options'        		  => $filters,
-					'eval'                    => array('style' => 'width: 140px', 'includeBlankOption' => true),
-				),
-			)
-		);
-
-		$widget = new \MultiColumnWizard($attributes);
-
-		return $widget->generate();
-	}
-
-
-	/**
-	 * @return string
-	 */
-	private function generateLayoutsWidget()
-	{
-		$config     = $GLOBALS['TL_DCA'][\Input::get('table')]['fields']['layouts'];
-		$attributes = \Widget::getAttributesFromDca($config, 'layouts');
-		$widget     = new \CheckBox($attributes);
-
-		return $widget->generate();
 	}
 
 
@@ -197,6 +137,48 @@ class Module extends \BackendModule
 
 		$callback = new $class;
 		return $callback->getAsseticFilterOptions();
+	}
+
+
+	/**
+	 * @throws \RuntimeException
+	 * @return array
+	 */
+	private function getFilesOption()
+	{
+		switch(\Input::get('table')) {
+			case 'tl_theme_plus_stylesheet':
+				$files   = $this->importer->getUninstalledStylesheets();
+				break;
+
+			case 'tl_theme_plus_javascript':
+				$files   = $this->importer->getUninstalledJavascripts();
+				break;
+
+			default:
+				throw new \RuntimeException('Can not import assets. Unknown assets table given');
+				break;
+		}
+
+
+		$prepared = array();
+
+		foreach($files as $package => $assets) {
+			if(!$assets) {
+				continue;
+			}
+
+			$prepared[$package] = array_map(function ($asset) {
+				return array(
+					'value' => $asset,
+					'label' => $asset,
+				);
+			}, $assets);
+		}
+
+		ksort($prepared);
+
+		return $prepared;
 	}
 
 } 

@@ -10,7 +10,7 @@
  */
 
 namespace Netzmacht\ThemePlusImporter\DataContainer;
-use Netzmacht\ThemePlusImporter\Installer;
+use Netzmacht\ThemePlusImporter\Importer;
 
 /**
  * Class ThemePlus
@@ -28,7 +28,7 @@ class ThemePlus
 		}
 
 		$dispatcher = $GLOBALS['container']['event-dispatcher'];
-		$installer  = new Installer(\Input::get('id'), $dispatcher);
+		$installer  = new Importer(\Input::get('id'), $dispatcher);
 
 		if($dc->table == 'tl_theme_plus_stylesheet') {
 			$addIcon = $installer->hastUninstalledStylesheets();

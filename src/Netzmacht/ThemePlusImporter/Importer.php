@@ -15,7 +15,7 @@ namespace Netzmacht\ThemePlusImporter;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Netzmacht\ThemePlusImporter\Event\CollectAssetsEvent;
 
-class Installer
+class Importer
 {
 
 	/**
@@ -98,36 +98,36 @@ class Installer
 
 
 	/**
-	 * @param $file
+	 * @param array $files
 	 * @param array $layouts
 	 * @param null $conditional
 	 * @param null $asseticFilter
 	 * @return $this
 	 */
-	public function installStylesheet($file, $layouts=array(), $conditional=null, $asseticFilter=null)
+	public function importStylesheets(array $files, $layouts=array(), $conditional=null, $asseticFilter=null)
 	{
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_stylesheet'];
 
-		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter, 'theme_plus_stylesheets');
-		$this->installedStylesheets[] = $file;
+		$this->installAssets($modelClass, $files, $layouts, $conditional, $asseticFilter, 'theme_plus_stylesheets');
+		$this->installedStylesheets[] = array_merge($this->installedStylesheets, $files);
 
 		return $this;
 	}
 
 
 	/**
-	 * @param $file
+	 * @param array $files
 	 * @param array $layouts
 	 * @param null $conditional
 	 * @param null $asseticFilter
 	 * @return $this
 	 */
-	public function installJavascript($file, $layouts=array(), $conditional=null, $asseticFilter=null)
+	public function importJavascripts(array $files, $layouts=array(), $conditional=null, $asseticFilter=null)
 	{
 		$modelClass = $GLOBALS['TL_MODELS']['tl_theme_plus_javascript'];
 
-		$this->installAsset($modelClass, $file, $layouts, $conditional, $asseticFilter, 'theme_plus_javascripts');
-		$this->installedStylesheets[] = $file;
+		$this->installAssets($modelClass, $files, $layouts, $conditional, $asseticFilter, 'theme_plus_javascripts');
+		$this->installedJavascripts[] = array_merge($this->installedJavascripts, $files);
 
 		return $this;
 	}
@@ -175,67 +175,73 @@ class Installer
 
 	/**
 	 * @param \Model|string $modelClass
-	 * @param $file
+	 * @param array $files
 	 * @param array $layouts
 	 * @param $conditional
 	 * @param $asseticFilter
 	 * @param $field
 	 * @throws \RuntimeException
-	 * @return \Model
+	 * @return \Model[]
 	 */
-	private function installAsset($modelClass, $file, $layouts=array(), $conditional, $asseticFilter, $field)
+	private function installAssets($modelClass, array $files, $layouts=array(), $conditional, $asseticFilter, $field)
 	{
 		$result  = $modelClass::findAll(array('limit' => '1', 'order' => 'sorting DESC'));
 		$sorting = $result === null ? 0 : $result->sorting;
-		$model   = null;
-		$type    = 'file';
-		$source  = '';
+		$new     = array();
 
-		/** @var \Model $model */
-		$model                = new $modelClass();
-		$model->tstamp        = time();
-		$model->pid           = $this->themeId;
-		$model->type          = $type;
-		$model->file          = $file;
-		$model->filesource    = $source;
-		$model->cc            = (string)$conditional;
-		$model->asseticFilter = (string)$asseticFilter;
-		$model->sorting       = ++$sorting;
-		$model->layouts		  = $layouts;
+		foreach($files as $file) {
+			$model   = null;
+			$type    = 'file';
+			$source  = '';
 
-		if(substr($file, 0, 6) == 'assets') {
-			$model->filesource = 'assets';
-			$model->file       = $file;
-		}
-		elseif(substr($file, 0, 5) == 'files') {
-			$fileModel = \FilesModel::findBy('path', $file);
+			/** @var \Model $model */
+			$model                = new $modelClass();
+			$model->tstamp        = time();
+			$model->pid           = $this->themeId;
+			$model->type          = $type;
+			$model->file          = $file;
+			$model->filesource    = $source;
+			$model->cc            = (string)$conditional;
+			$model->asseticFilter = (string)$asseticFilter;
+			$model->sorting       = ++$sorting;
+			$model->layouts		  = $layouts;
 
-			if(!$fileModel) {
-				throw new \RuntimeException(sprintf('File "%s" does not exists', $file));
+			if(substr($file, 0, 6) == 'assets') {
+				$model->filesource = 'assets';
+				$model->file       = $file;
+			}
+			elseif(substr($file, 0, 5) == 'files') {
+				$fileModel = \FilesModel::findBy('path', $file);
+
+				if(!$fileModel) {
+					throw new \RuntimeException(sprintf('File "%s" does not exists', $file));
+				}
+
+				$model->filesource = 'files';
+				$model->file       = $fileModel->uuid;
+			}
+			elseif(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//') {
+				$type = 'url';
+				$model->url = $file;
+			}
+			else {
+				$model->source = 'system/modules';
+				$model->file   = $file;
 			}
 
-			$model->filesource = 'files';
-			$model->file       = $fileModel->uuid;
-		}
-		elseif(substr($file, 0, 7) == 'http://' || substr($file, 0, 8) == 'https://' || substr($file, 0, 2) == '//') {
-			$type = 'url';
-			$model->url = $file;
-		}
-		else {
-			$model->source = 'system/modules';
-			$model->file   = $file;
+			$model->type = $type;
+			$model->save();
+
+			$new[] = $model->id;
 		}
 
-		$model->type = $type;
-		$model->save();
-
-		if($layouts) {
+		if($layouts && $new) {
 			$layouts = \LayoutModel::findMultipleByIds($layouts);
 
 			if($layouts) {
 				while($layouts->next()) {
-					$value   = deserialize($layouts->$field);
-					$value[] = $model->id;
+					$value = deserialize($layouts->$field);
+					$value = array_merge($value, $new);
 
 					$layouts->$field = $value;
 					$layouts->save();
@@ -243,7 +249,7 @@ class Installer
 			}
 		}
 
-		return $model;
+		return $new;
 	}
 
 	/**
@@ -274,4 +280,5 @@ class Installer
 
 		return false;
 	}
+
 } 
