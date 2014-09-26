@@ -14,8 +14,8 @@ The extension integrates an import dialog in the Theme+ stylesheets and javascri
 Install
 --------
 
--Theme Plus importer can be installed using the composer repository:
-`netzmacht/contao-theme-plus-importer`-
+~~Theme Plus importer can be installed using the composer repository: `netzmacht/contao-theme-plus-importer`~~
+
 You have to install it manually at the moment. Installing by composer is on the roadmap.
 
 
